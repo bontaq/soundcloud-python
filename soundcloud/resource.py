@@ -49,7 +49,10 @@ def wrapped_resource(response):
     dicts will be returned as a ```Resource``` instance.
     """
     # decode response text
-    response_content = response.content.decode(response.encoding)
+    try:
+        response_content = response.content.decode(response.encoding)
+    except TypeError:
+        response_content = response.content
 
     try:
         content = json.loads(response_content)
