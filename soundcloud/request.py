@@ -76,7 +76,7 @@ def namespaced_query_string(d, prefix=""):
     return qs
 
 
-def make_request(method, url, params):
+def make_request(method, url, params, use_v2=False):
     """Make an HTTP request, formatting params as required."""
     empty = []
 
@@ -95,9 +95,16 @@ def make_request(method, url, params):
     kwargs = {
         'allow_redirects': allow_redirects,
         'headers': {
-            'User-Agent': soundcloud.USER_AGENT
+            'User-Agent': soundcloud.USER_AGENT,
         }
     }
+
+    # a little bit of disguise to allow access to api-v2
+    if use_v2:
+        kwargs['headers']['Origin'] = 'https://soundcloud.com'
+        kwargs['headers']['Authorization'] = 'OAuth %s' % params.get('oauth_token')
+        kwargs['headers']['Referer'] = 'https://soundcloud.com/stream'
+
     # options, not params
     if 'verify_ssl' in params:
         if params['verify_ssl'] is False:

@@ -10,6 +10,7 @@ class Client(object):
 
     use_ssl = True
     host = 'api.soundcloud.com'
+    host_v2 = 'api-v2.soundcloud.com'
 
     def __init__(self, **kwargs):
         """Create a client instance with the provided options. Options should
@@ -112,11 +113,11 @@ class Client(object):
             make_request('post', url, options))
         self.access_token = self.token.access_token
 
-    def _request(self, method, resource, **kwargs):
+    def _request(self, method, resource, use_v2=False, **kwargs):
         """Given an HTTP method, a resource name and kwargs, construct a
         request and return the response.
         """
-        url = self._resolve_resource_name(resource)
+        url = self._resolve_resource_name(resource, use_v2)
 
         if hasattr(self, 'access_token'):
             kwargs.update(dict(oauth_token=self.access_token))
@@ -127,7 +128,7 @@ class Client(object):
             'verify_ssl': self.options.get('verify_ssl', True),
             'proxies': self.options.get('proxies', None)
         })
-        return wrapped_resource(make_request(method, url, kwargs))
+        return wrapped_resource(make_request(method, url, kwargs, use_v2))
 
     def __getattr__(self, name, **kwargs):
         """Translate an HTTP verb into a request method."""
@@ -135,7 +136,7 @@ class Client(object):
             raise AttributeError
         return partial(self._request, name, **kwargs)
 
-    def _resolve_resource_name(self, name):
+    def _resolve_resource_name(self, name, use_v2=False):
         """Convert a resource name (e.g. tracks) into a URI."""
         if name[:4] == 'http':  # already a url
             if name[:4] != 'json' and name[-8:] not in ('download', 'stream'):
@@ -144,6 +145,8 @@ class Client(object):
         name = name.rstrip('/').lstrip('/')
         if name[-13:] == 'contributions':
             return '%s%s/%s' % (self.scheme, self.host, name)
+        if use_v2:
+            return '%s%s/%s' % (self.scheme, self.host_v2, name)
         return '%s%s/%s.json' % (self.scheme, self.host, name)
 
     def _redirect_uri(self):
